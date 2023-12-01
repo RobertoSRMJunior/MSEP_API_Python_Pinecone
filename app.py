@@ -1,17 +1,22 @@
 import os
-from flask import Flask, request
+
 import pinecone
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.vectorstores import Chroma, Pinecone
 from langchain.embeddings import OpenAIEmbeddings
 
-# Carrega as chaves de API do ambiente
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
-# Cria a aplicação Flask
+from flask import (Flask, redirect, render_template, request,
+                   send_from_directory, url_for)
+
 app = Flask(__name__)
+
+
+# Carrega as chaves de API do ambiente
+OPENAI_API_KEY = "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"
+PINECONE_API_KEY = "74a1af62-50b3-4741-b340-4833aafda023"
+
 
 # Inicia a conexão com o Pinecone
 pinecone.init(
@@ -23,7 +28,7 @@ pinecone.init(
 index_pinecone = 'jarvis'
 
 
-@app.route("/", methods=["POST"])
+@app.route("/pergunta", methods=["POST"])
 def search():
     # Extrai a pergunta da requisição JSON
     question = request.json["question"]
@@ -48,5 +53,29 @@ def search():
     return {"resposta": resposta}
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
+
+@app.route('/')
+def index():
+   print('Request for index page received')
+   return render_template('index.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+@app.route('/hello', methods=['POST'])
+def hello():
+   name = request.form.get('name')
+
+   if name:
+       print('Request for hello page received with name=%s' % name)
+       return render_template('hello.html', name = name)
+   else:
+       print('Request for hello page received with no name or blank name -- redirecting')
+       return redirect(url_for('index'))
+
+
+if __name__ == '__main__':
+   app.run()
